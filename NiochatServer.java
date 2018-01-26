@@ -31,13 +31,13 @@ public class NiochatServer implements Runnable {
 
                 selector.select();
 
-                Iterator it = sel.selectedKeys().iterator();
+                Iterator it = selector.selectedKeys().iterator();
 
-                while(iter.hasNext()) {
+                while(it.hasNext()) {
 
-                    key = iter.next();
+                    key = it.next();
 
-                    iter.remove();
+                    it.remove();
 
                     if(key.isAcceptable()) this.handleAccept(key);
                     if(key.isReadable()) this.handleRead(key);
@@ -61,110 +61,27 @@ public class NiochatServer implements Runnable {
 
         sc.register(selector, SelectionKey.OP_READ, address);
 
-        userMap.put(sc,"");
-
-        System.out.println("accepted connection from: "+address+"["+userMap.size()+"]");
+        System.out.println("accepted connection from " + address);
     }
 
     private void handleRead(SelectionKey key) throws IOException {
+
         SocketChannel ch = (SocketChannel) key.channel();
-        StringBuilder sb = new StringBuilder();
 
-        buf.clear();
+        ch.read(buffer);
 
-        int read = 0;
+        CharBuffer cb = cs.decode((ByteBuffer) buffer.flip());
 
-        while( (read = ch.read(buf)) > 0 ) {
+        String response = cb.toString();
 
-            buf.flip();
+        System.out.print("Echoing : " + response);
 
-            byte[] bytes = new byte[buf.limit()];
+        ch.write((ByteBuffer) buffer.rewind());
 
-            buf.get(bytes);
-
-            sb.append(new String(bytes));
-
-            buf.clear();
-        }
-
-        String msg;
-
-        if(read<0) {
-
-            msg = "[" + userMap.get(ch) + "] left the chat.\n";
-
-            System.out.println(key.attachment() + " left the chat.");
-
+        if (response.indexOf("END") != -1)
             ch.close();
 
-            userMap.remove(ch);
-
-            system(msg);
-        }
-        else {
-
-            msg = sb.toString();
-
-            System.out.println(msg);
-
-            if (msg.indexOf("//list") > -1){
-
-                msg = "";
-
-                for (Map.Entry<SocketChannel, String> entry: userMap.entrySet()){
-
-                    msg = msg + entry.getValue() + "\n";
-                }
-
-                ByteBuffer msgBuf = ByteBuffer.wrap(msg.getBytes());
-
-                ch.write(msgBuf);
-
-                msgBuf.rewind();
-            }
-            else if(msg.indexOf("<policy-file-request/>") > -1){
-
-                msg = "<?xml version=\"1.0\"?><!DOCTYPE cross-domain-policy SYSTEM \"http://www.adobe.com/xml/dtds/cross-domain-policy.dtd\"><!-- Policy file for xmlsocket://socks.mysite.com --><cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"4444\" /></cross-domain-policy>\0";
-
-                ByteBuffer msgBuf = ByteBuffer.wrap(msg.getBytes());
-
-                ch.write(msgBuf);
-
-                System.out.println("send policy file");
-
-                msgBuf.rewind();
-            }
-            else if (msg.indexOf("//rename") > -1){
-                if(msg.length()>8){
-
-                    String name = msg.substring(9,msg.length());
-
-                    userMap.replace(ch,name);
-                }
-            }
-            else {
-
-                ArrayList<String> recipient = getPrivateRecipient(msg);
-
-                if (recipient.size() > 0) {
-
-                    ByteBuffer msgBuf = ByteBuffer.wrap(msg.getBytes());
-
-                    for (int i=0;i<recipient.size();i++) {
-                        for (Map.Entry<SocketChannel, String> entry : userMap.entrySet()) {
-                            if (entry.getValue().equals(recipient.get(i)))
-                                entry.getKey().write(msgBuf);
-                        }
-                    }
-
-                    ch.write(msgBuf);
-
-                } else {
-
-                    broadcast(ch, msg);
-                }
-            }
-        }
+        buffer.clear();
     }
 
     private ArrayList<String> getPrivateRecipient(String msg){
