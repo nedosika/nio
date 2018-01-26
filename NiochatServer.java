@@ -2,6 +2,7 @@ import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.charset.*;
 import java.io.IOException;
 import java.util.*;
 
@@ -10,22 +11,24 @@ public class NiochatServer implements Runnable {
     private ServerSocketChannel ssc;
     private Selector selector;
     private ByteBuffer buffer = ByteBuffer.allocate(256);
+    private String encoding = System.getProperty("file.encoding");
+    private Charset cs = Charset.forName(encoding);
     private Map<SocketChannel,String> userMap = new HashMap<SocketChannel, String>();
 
     NiochatServer(int port) throws IOException {
         this.port = port;
-        this.ssc = ServerSocketChannel.open();
-        this.ssc.socket().bind(new InetSocketAddress(port));
-        this.ssc.configureBlocking(false);
-        this.selector = Selector.open();
-        this.ssc.register(selector, SelectionKey.OP_ACCEPT);
+        ssc = ServerSocketChannel.open();
+        ssc.socket().bind(new InetSocketAddress(port));
+        ssc.configureBlocking(false);
+        selector = Selector.open();
+        //this.ssc.register(selector, SelectionKey.OP_ACCEPT);
     }
 
     @Override public void run() {
         try {
             System.out.println("Server starting on port " + this.port);
 
-            SelectionKey key;
+            SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
             while(this.ssc.isOpen()) {
 
@@ -35,7 +38,7 @@ public class NiochatServer implements Runnable {
 
                 while(it.hasNext()) {
 
-                    key = it.next();
+                    key = (SelectionKey)it.next();
 
                     it.remove();
 
@@ -49,7 +52,7 @@ public class NiochatServer implements Runnable {
         }
     }
 
-    private final ByteBuffer welcomeBuf = ByteBuffer.wrap("Welcome!\n".getBytes());
+    //private final ByteBuffer welcomeBuf = ByteBuffer.wrap("Welcome!\n".getBytes());
 
     private void handleAccept(SelectionKey key) throws IOException {
 
