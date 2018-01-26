@@ -21,33 +21,36 @@ public class NiochatServer implements Runnable {
         ssc.socket().bind(new InetSocketAddress(port));
         ssc.configureBlocking(false);
         selector = Selector.open();
-        //this.ssc.register(selector, SelectionKey.OP_ACCEPT);
     }
 
     @Override public void run() {
         try {
-            System.out.println("Server starting on port " + this.port);
+            System.out.println("Server starting on port " + port);
 
             SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
-            while(this.ssc.isOpen()) {
+            while(ssc.isOpen()) {
 
                 selector.select();
 
-                Iterator it = selector.selectedKeys().iterator();
+                Iterator iterator = selector.selectedKeys().iterator();
 
-                while(it.hasNext()) {
+                while(iterator.hasNext()) {
 
-                    key = (SelectionKey)it.next();
+                    key = (SelectionKey)iterator.next();
 
-                    it.remove();
+                    iterator.remove();
 
-                    if(key.isAcceptable()) this.handleAccept(key);
-                    if(key.isReadable()) this.handleRead(key);
+                    if(key.isAcceptable()) handleAccept(key);
+
+                    if(key.isReadable()) handleRead(key);
                 }
             }
-        } catch(IOException e) {
-            System.out.println("IOException, server of port " +this.port+ " terminating. Stack trace:");
+        }
+        catch(IOException e) {
+
+            System.out.println("IOException, server of port " + port + " terminating. Stack trace:");
+
             e.printStackTrace();
         }
     }
@@ -146,7 +149,7 @@ public class NiochatServer implements Runnable {
     public static void main(String[] args) throws IOException {
 
         NiochatServer server = new NiochatServer(4444);
-
         (new Thread(server)).start();
+
     }
 }
