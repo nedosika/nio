@@ -86,12 +86,6 @@ public class NiochatServer implements Runnable {
 
         handleResponse(ch, response);
 
-        //if (response.indexOf("END") != -1)
-        //    ch.close();
-
-        //if (response.indexOf("STOP") != -1)
-        //    ssc.close();
-
         buffer.clear();
     }
 
@@ -102,6 +96,24 @@ public class NiochatServer implements Runnable {
 
         if (response.indexOf("STOP") != -1)
             ssc.close();
+
+        if (response.indexOf("LOGIN") != -1){
+           handleLogin(ch, response);
+        }
+
+    }
+
+    private void handleLogin(SocketChannel ch, String response) throws IOException{
+
+        int beginIndex = 6;
+
+        int endIndex = response.length(); //response.indexOf(' ', 6);
+
+        //ByteBuffer buffer = ByteBuffer.wrap(response.substring(beginIndex, endIndex).getBytes());
+
+        ByteBuffer buffer = ByteBuffer.wrap(response.substring(beginIndex, endIndex).getBytes());
+
+        ch.write((ByteBuffer) buffer.rewind());
 
     }
 
