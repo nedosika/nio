@@ -61,11 +61,11 @@ public class NiochatServer implements Runnable {
 
         SocketChannel sc = ((ServerSocketChannel) key.channel()).accept();
 
-        String address = (new StringBuilder( sc.socket().getInetAddress().toString() )).append(":").append( sc.socket().getPort() ).toString();
+        String address = (new StringBuilder( sc.socket().getInetAddress().getHostName() )).append(":").append( sc.socket().getPort() ).toString();
 
         sc.configureBlocking(false);
 
-        sc.register(selector, SelectionKey.OP_READ, address);
+        sc.register(selector, SelectionKey.OP_READ);
 
         System.out.println("accepted connection from " + address);
     }
@@ -82,10 +82,13 @@ public class NiochatServer implements Runnable {
 
         System.out.print("Echoing : " + response);
 
-        ch.write((ByteBuffer) buffer.rewind());
+        //ch.write((ByteBuffer) buffer.rewind());
+
 
         if (response.indexOf("END") != -1)
             ch.close();
+        if (response.indexOf("STOP") != -1)
+            ssc.close();
 
         buffer.clear();
     }
@@ -127,11 +130,9 @@ public class NiochatServer implements Runnable {
         }
     }
 
-    private void broadcast(SocketChannel ch,String msg) throws IOException {
+    private void broadcast(String broadcastMessage) throws IOException {
 
-        msg = "[" + userMap.get(ch) + "] " + msg + "\n";
-
-        ByteBuffer msgBuf = ByteBuffer.wrap(msg.getBytes());
+        ByteBuffer buffer = ByteBuffer.wrap(broadcastMessage.getBytes());
 
         for(SelectionKey key : selector.keys()) {
 
@@ -139,9 +140,9 @@ public class NiochatServer implements Runnable {
 
                 SocketChannel sch = (SocketChannel) key.channel();
 
-                sch.write(msgBuf);
+                sch.write(buffer);
 
-                msgBuf.rewind();
+                buffer.rewind();
             }
         }
     }
