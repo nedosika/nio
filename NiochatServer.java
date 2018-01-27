@@ -84,13 +84,25 @@ public class NiochatServer implements Runnable {
 
         //ch.write((ByteBuffer) buffer.rewind());
 
+        handleResponse(ch, response);
+
+        //if (response.indexOf("END") != -1)
+        //    ch.close();
+
+        //if (response.indexOf("STOP") != -1)
+        //    ssc.close();
+
+        buffer.clear();
+    }
+
+    private void handleResponse(SocketChannel ch, String response) throws IOException{
 
         if (response.indexOf("END") != -1)
             ch.close();
+
         if (response.indexOf("STOP") != -1)
             ssc.close();
 
-        buffer.clear();
     }
 
     private ArrayList<String> getPrivateRecipient(String msg){
@@ -111,23 +123,6 @@ public class NiochatServer implements Runnable {
             }
 
         return arrayPrivateRecipient;
-    }
-
-    private void system(String msg) throws IOException{
-
-        ByteBuffer msgBuf = ByteBuffer.wrap(msg.getBytes());
-
-        for(SelectionKey key : selector.keys()) {
-
-            if(key.isValid() && key.channel() instanceof SocketChannel) {
-
-                SocketChannel sch = (SocketChannel) key.channel();
-
-                sch.write(msgBuf);
-
-                msgBuf.rewind();
-            }
-        }
     }
 
     private void broadcast(String broadcastMessage) throws IOException {
