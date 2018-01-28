@@ -14,6 +14,8 @@ import java.util.Set;
 
 public class NioSocketClient {
     static BufferedReader userInputReader = null;
+    static String login;
+    static String password;
 
     public static boolean processReadySet(Set readySet) throws Exception {
         Iterator iterator = readySet.iterator();
@@ -81,7 +83,15 @@ public class NioSocketClient {
         channel.connect(serverAddress);
         int operations = SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE;
         channel.register(selector, operations);
+
         userInputReader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.print("Login:");
+        login = userInputReader.readLine();
+
+        System.out.print("Password:");
+        password = userInputReader.readLine();
+
+
         while (true) {
             if (selector.select() > 0) {
                 boolean doneStatus = processReadySet(selector.selectedKeys());
