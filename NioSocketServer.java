@@ -6,7 +6,7 @@ import java.nio.charset.*;
 import java.io.IOException;
 import java.util.*;
 
-public class NiochatServer implements Runnable {
+public class NioSocketServer implements Runnable {
     public static int PORT;
     private ServerSocketChannel ssc;
     private Selector selector;
@@ -15,7 +15,7 @@ public class NiochatServer implements Runnable {
     private Charset cs = Charset.forName(encoding);
     private Map<SocketChannel,String> userMap = new HashMap<SocketChannel, String>();
 
-    NiochatServer(int port) throws IOException {
+    public NioSocketServer(int port) throws IOException {
         PORT = port;
         ssc = ServerSocketChannel.open();
         ssc.socket().bind(new InetSocketAddress(PORT));
@@ -80,7 +80,7 @@ public class NiochatServer implements Runnable {
 
         String response = cb.toString();
 
-        System.out.print("Echoing : " + response);
+        System.out.println("Echoing : " + response);
 
         //ch.write((ByteBuffer) buffer.rewind());
 
@@ -158,7 +158,7 @@ public class NiochatServer implements Runnable {
 
     public static void main(String[] args) throws IOException {
 
-        NiochatServer server = new NiochatServer(4444);
+        NioSocketServer server = new NioSocketServer(4444);
         (new Thread(server)).start();
 
     }
