@@ -7,25 +7,25 @@ import java.io.IOException;
 import java.util.*;
 
 public class NiochatServer implements Runnable {
-    private int port;
+    public static int PORT;
     private ServerSocketChannel ssc;
     private Selector selector;
-    private ByteBuffer buffer = ByteBuffer.allocate(256);
+    private ByteBuffer buffer = ByteBuffer.allocate(16);
     private String encoding = System.getProperty("file.encoding");
     private Charset cs = Charset.forName(encoding);
     private Map<SocketChannel,String> userMap = new HashMap<SocketChannel, String>();
 
     NiochatServer(int port) throws IOException {
-        this.port = port;
+        PORT = port;
         ssc = ServerSocketChannel.open();
-        ssc.socket().bind(new InetSocketAddress(port));
+        ssc.socket().bind(new InetSocketAddress(PORT));
         ssc.configureBlocking(false);
         selector = Selector.open();
     }
 
     @Override public void run() {
         try {
-            System.out.println("Server starting on port " + port);
+            System.out.println("Server starting on port " + PORT);
 
             SelectionKey key = ssc.register(selector, SelectionKey.OP_ACCEPT);
 
@@ -49,7 +49,7 @@ public class NiochatServer implements Runnable {
         }
         catch(IOException e) {
 
-            System.out.println("IOException, server of port " + port + " terminating. Stack trace:");
+            System.out.println("IOException, server of port " + PORT + " terminating. Stack trace:");
 
             e.printStackTrace();
         }
@@ -100,6 +100,8 @@ public class NiochatServer implements Runnable {
         if (response.indexOf("LOGIN") != -1){
            handleLogin(ch, response);
         }
+
+        broadcast(response);
 
     }
 
