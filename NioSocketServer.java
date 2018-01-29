@@ -10,7 +10,7 @@ public class NioSocketServer implements Runnable {
     public static int PORT;
     private ServerSocketChannel ssc;
     private Selector selector;
-    private ByteBuffer buffer = ByteBuffer.allocate(16);
+    private ByteBuffer buffer = ByteBuffer.allocate(1024);
     private String encoding = System.getProperty("file.encoding");
     private Charset cs = Charset.forName(encoding);
     private Map<SocketChannel,String> userMap = new HashMap<SocketChannel, String>();

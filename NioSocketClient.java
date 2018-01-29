@@ -12,6 +12,21 @@ import java.nio.charset.CharsetDecoder;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+
 public class NioSocketClient {
     static BufferedReader userInputReader = null;
     static String login;
@@ -28,11 +43,33 @@ public class NioSocketClient {
                 if (!connected) {
                     return true; // Exit
                 }
+                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                    DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+                    Document document = documentBuilder.newDocument();
+
+                    Element root = document.createElement("data");
+
+                    Attr attrType = document.createAttribute("type");
+                    attrType.setValue("message");
+                    root.setAttributeNode(attrType);
+
+                    Attr attrText = document.createAttribute("text");
+                    attrText.setValue("test message");
+                    root.setAttributeNode(attrText);
+
+                    document.appendChild(root);
+
+                    SocketChannel sChannel = (SocketChannel) key.channel();
+                    ByteBuffer buffer = ByteBuffer.wrap(toXmlString(document).getBytes());
+                    sChannel.write(buffer);
+                    buffer.clear();
             }
+
             if (key.isReadable()) {
                 String msg = processRead(key);
                 System.out.println(msg);
             }
+
             if (key.isWritable()) {
                 System.out.print("Please enter a message(Bye to quit):");
                 String msg = userInputReader.readLine();
@@ -45,6 +82,7 @@ public class NioSocketClient {
 
                     return true; // Exit
                 }
+
                 SocketChannel sChannel = (SocketChannel) key.channel();
                 ByteBuffer buffer = ByteBuffer.wrap(msg.getBytes());
                 sChannel.write(buffer);
@@ -62,7 +100,7 @@ public class NioSocketClient {
     }
     public static String processRead(SelectionKey key) throws Exception {
         SocketChannel sChannel = (SocketChannel) key.channel();
-        ByteBuffer buffer = ByteBuffer.allocate(128);
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
         sChannel.read(buffer);
         buffer.flip();
         String encoding = System.getProperty("file.encoding");
@@ -72,6 +110,19 @@ public class NioSocketClient {
         String msg = charBuffer.toString();
         return msg;
     }
+
+    private static String toXmlString(Document document) throws TransformerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource source = new DOMSource(document);
+        StringWriter strWriter = new StringWriter();
+        StreamResult result = new StreamResult(strWriter);
+
+        transformer.transform(source, result);
+
+        return strWriter.getBuffer().toString();
+    }
+
     public static void main(String[] args) throws Exception {
         InetAddress serverIPAddress = InetAddress.getByName("localhost");
         int port = 4444;
